@@ -1,0 +1,109 @@
+/* your styles go here */
+body {
+  background: #fafafa;
+  color: #333333;
+  margin-top: 4rem;
+  font-family: "Open Sans", sans-serif;
+  font-size: 1rem;
+  font-weight: normal;
+  /*line-height: 1.5;*/
+  /*color: #212529;*/
+  /*background-color: #fff;*/
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #444444;
+}
+
+ul {
+  margin: 0;
+}
+
+.bg-steel {
+  background-color: rgba(95,120,138, 0.9);
+}
+
+.site-header .navbar-nav .nav-link {
+  color: #cbd5db;
+}
+
+.site-header .navbar-nav .nav-link:hover {
+  color: #ffffff;
+}
+
+.site-header .navbar-nav .nav-link.active {
+  font-weight: 500;
+}
+
+.content-section {
+  background: #ffffff;
+  padding: 10px 20px;
+  border: 1px solid #dddddd;
+  border-radius: 3px;
+  margin-bottom: 20px;
+}
+
+.my-content-section {
+  padding: 10px calc(5%);
+  margin-bottom: 20px;
+}
+
+.my-user-page {
+  /*position: relative;*/
+  /*width: 100%;*/
+  min-height: 1px;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-left: 5%;
+  max-width: 90%;
+  min-width: 90%;
+}
+
+.article-title {
+  color: #444444;
+}
+
+a.article-title:hover {
+  color: #428bca;
+  text-decoration: none;
+}
+
+.article-content {
+  white-space: pre-line;
+}
+
+.article-img {
+  height: 65px;
+  width: 65px;
+  margin-right: 16px;
+}
+
+.article-metadata {
+  padding-bottom: 1px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #e3e3e3
+}
+
+.article-metadata a:hover {
+  color: #333;
+  text-decoration: none;
+}
+
+.article-svg {
+  width: 25px;
+  height: 25px;
+  vertical-align: middle;
+}
+
+.account-img {
+  height: 125px;
+  width: 125px;
+  margin-right: 40px;
+  margin-bottom: 16px;
+}
+
+.account-heading {
+  font-size: 2rem;
+}
+
+.iconify { width: 28px; height: 28px; }
