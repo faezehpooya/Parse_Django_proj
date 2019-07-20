@@ -26,7 +26,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('register/', user_views.register, name='register'),
     path('profile/', user_views.profile, name='profile'),
-    path('login/', auth_views.LoginView.as_view(template_name='users/login.html'), name='login'),
+    # path('login/', auth_views.LoginView.as_view(template_name='users/login.html'), name='login'),
+    path('login/', user_views.myuser_login, name='login'),
+    path('post/<int:pk>/login/', user_views.myuser_login, name='login_for_comment'),
     path('logout/', auth_views.LogoutView.as_view(template_name='users/logout.html'), name='logout'),
     path('users/<str:username>', user_views.UserPageView, name='user_page'),
     path('users/<str:username>', user_views.UserPageView, name='user-posts'),
@@ -51,9 +53,11 @@ urlpatterns = [
          ),
          name='password_reset_complete'),
     path('', include('blog.urls')),
+
     url(r'^activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
         user_views.activate,
         name='activate'),
+
     path('tinymce/', include('tinymce.urls')),
 
 ]
