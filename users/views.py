@@ -1,7 +1,6 @@
 from django.contrib import messages
 from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm
-from django.contrib.auth.decorators import login_required
-from blog.models import Post,User, SavePost
+from blog.models import Post, User, SavePost
 from django.contrib.auth import  logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
