@@ -11,11 +11,13 @@ class Location(models.Model):
     def __str__(self):
         return str(self.x, self.y)
 
+
 class Category(models.Model):
     title = models.CharField(max_length=20)
 
     def __str__(self):
         return self.title
+
 
 class PostView(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -23,6 +25,7 @@ class PostView(models.Model):
 
     def __str__(self):
         return self.user.username
+
 
 class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -52,6 +55,7 @@ class Post(models.Model):
     def view_count(self):
         return PostView.objects.filter(post=self).count()
 
+
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -60,10 +64,26 @@ class Comment(models.Model):
         'Post', related_name='comments', on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.user.username
+        return self.content
+
+    @property
+    def like_comment_count(self):
+        return LikeComment.objects.filter(comment=self).count()
+
+    @property
+    def dislike_comment_count(self):
+        return DislikeComment.objects.filter(comment=self).count()
 
 
 class LikeComment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return str(self.user.username)
+
+
+class DislikeComment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
 
@@ -78,6 +98,7 @@ class Score(models.Model):
 
     def __str__(self):
         return str(self.score)
+
 
 class SavePost(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
