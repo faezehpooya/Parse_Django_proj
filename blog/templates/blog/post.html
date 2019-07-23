@@ -1,6 +1,65 @@
 {% extends 'blog/base.html' %}
 {% load static %}
 
+{% block jQuery %}
+  <script>
+    $(document).ready(function () {
+
+        $(".my_thump-up_icon").click(function () {
+           $(this).toggleClass("toggle-color");
+        });
+
+        $(".my_thump-up_blue_icon").click(function () {
+           $(this).toggleClass("toggle-color");
+        });
+
+        $(".cen-like").click(function () {
+           $(this).toggleClass("toggle-color-blue");
+        });
+
+        $(".cen-like.blue-border").click(function () {
+           $(this).toggleClass("toggle-color");
+        });
+
+        $("#20").click(function () {
+            console.log("10000");
+            $(this).val(10)
+        });
+
+        function updateText(btn, Liked_disliked, num){
+            if (Liked_disliked === 1){
+                {#console.log('heyyyyy', btn.val(), $(".my_num_input").val(), num)#}
+            } else {
+            }
+        }
+
+        $(".like-btn").click(function () {
+            var this_ = $(this);
+            var comment = this_.attr("data-comment");
+            console.log(comment);
+
+            $.ajax({
+                url: 'like_comment',
+                data: {
+                  'comment_pk': comment
+                },
+                dataType: 'json',
+                success: function(data){
+                    console.log(data);
+                    $("#number_"+data.id).val(data.likes_count);
+
+                }, error: function(error){
+                  console.log(error);
+                  console.log("error")
+                }
+            });
+
+        });
+
+    });
+  </script>
+{% endblock %}
+
 {% block content %}
 
 <style>
@@ -71,23 +130,51 @@
                 <h3 class="h6">Post Comments<span class="no-of-comments">({{ post.comments.count }})</span></h3>
               </header>
               {% for comment in post.get_comments %}
-              <div class="comment">
-                <div class="comment-header d-flex justify-content-between">
-                  <div class="user d-flex align-items-center">
-                    <a href="{% url 'user-posts' comment.user.username %}" class="image">
-                      {% if comment.user %}
-                      <img src="{{ comment.post.author.profile.image.url }}" alt="..." class="img-fluid rounded-circle">
-                      {% else %}
-                      <img src="{% static 'blog/static_in_env/img/user.svg' %}" alt="..." class="img-fluid rounded-circle">
-                      {% endif %}
-                    </a>
-                    <div class="title"><strong>{{ comment.user.username }}</strong><span class="date">{{ comment.timestamp|timesince }} ago</span></div>
+                  <div class="comment">
+                    <div class="comment-header d-flex justify-content-between">
+                      <div class="user d-flex align-items-center">
+                        <a href="{% url 'user-posts' comment.user.username %}" class="image">
+                          {% if comment.user %}
+                          <img src="{{ comment.post.author.profile.image.url }}" alt="..." class="img-fluid rounded-circle">
+                          {% else %}
+                          <img src="{% static 'blog/static_in_env/img/user.svg' %}" alt="..." class="img-fluid rounded-circle">
+                          {% endif %}
+                        </a>
+                        <div class="title"><strong>{{ comment.user.username }}</strong><span class="date">{{ comment.timestamp|timesince }} ago</span></div>
+                      </div>
+                    </div>
+                    <div class="comment-body">
+                      <p>{{ comment.content }}</p>
+                        <div class="like_dislike">
+                            {% if request.user.is_authenticated %}
+                                <a class="like_dislike like-btn" data-comment='{{ comment.id }}' >
+                                    {% if do_like_comments.pop %}
+                                        <div class="cen-like blue-border">
+                                            <button class="my_thump-up_btn">
+                                                <i class="my_thump-up_blue_icon material-icons">&#xe8dc;</i>
+                                            </button>
+                                            <input id="number_{{ comment.id }}" class="my_num_input" type="button" value="{{ comment.like_comment_count }}">
+                                        </div>
+                                    {% else %}
+                                        <div class="cen-like black-border">
+                                            <button class="my_thump-up_btn">
+                                                <i class="my_thump-up_icon material-icons">&#xe8dc;</i>
+                                            </button>
+                                            <input id="number_{{ comment.id }}" class="my_num_input" type="button" value="{{ comment.like_comment_count }}">
+                                        </div>
+                                    {% endif %}
+                                </a>
+                            {% else %}
+                                <div class="like_dislike cen-like-not-logged-in">
+                                    <button class="my_thump-up_btn">
+                                        <i class="my_thump-up_icon-not-logged-in material-icons">&#xe8dc;</i>
+                                    </button>
+                                    <input class="my_num_input" type="button" value="{{ comment.like_comment_count }}">
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
                   </div>
-                </div>
-                <div class="comment-body">
-                  <p>{{ comment.content }}</p>
-                </div>
-              </div>
               {% endfor %}
             </div>
 
@@ -103,7 +190,7 @@
                     {{ form }}
                   </div>
                   <div class="form-group col-md-12">
-                    <button type="submit" class="btn btn-secondary">Submit Comment</button>
+                     <button type="submit" class="btn btn-secondary">Submit Comment</button>
                   </div>
                 </div>
               </form>
