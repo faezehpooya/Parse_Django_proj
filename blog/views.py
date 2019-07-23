@@ -9,8 +9,72 @@ from django.views.generic import (
     UpdateView,
     DeleteView
 )
-from .models import Post, PostView, SavePost
+from .models import Post, PostView, SavePost, Comment, LikeComment
 from .forms import CommentForm, PostForm
+
+
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+
+
+@api_view(['GET', 'POST', ])
+def like_comment(request, pk):
+    comment_pk = request.GET.get('comment_pk', -1)
+    userId = request.user.id
+    flag = True
+    if LikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first():
+        flag = False
+    if flag:
+        ap = LikeComment(comment=Comment.objects.get(id=comment_pk), user=User.objects.get(id=userId))
+        ap.save()
+    else:
+        liked_comment = LikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first()
+        liked_comment.delete()
+
+    likes_count = LikeComment \
+        .objects \
+        .filter(comment_id=comment_pk) \
+        .count()
+
+    data = {
+        "id": comment_pk,
+        "like_Dislike": flag,
+        "likes_count": likes_count
+    }
+    return Response(data)
+
+
+@api_view(['GET', 'POST', ])
+def dislike_comment(request, pk):
+    comment_pk = username = request.GET.get('comment_pk', -1)
+    print("hellooo", comment_pk)
+    userId = request.user.id
+    flag = True
+    if LikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first():
+        flag = False
+    if flag:
+        ap = LikeComment(comment=Comment.objects.get(id=comment_pk), user=User.objects.get(id=userId))
+        ap.save()
+    else:
+        liked_comment = LikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first()
+        liked_comment.delete()
+
+    likes_count = LikeComment \
+        .objects \
+        .values('comment_id') \
+        .annotate(Count('comment_id')) \
+        .filter(comment_id=comment_pk) \
+        .first()
+    if likes_count:
+        likes_count = likes_count.get('comment_id__count')
+    else:
+        likes_count = 0
+
+    data = {
+        "like_Dislike": flag,
+        "likes_count": likes_count
+    }
+    return Response(data)
 
 
 def home(request):
@@ -30,18 +94,7 @@ def get_category_count():
     return queryset
 
 
-def post_is_saved(pk, user):
-    queryset = SavePost \
-        .objects \
-        .filter(user=user) \
-        .filter(post_id=pk)
-    flag = False
-    if queryset:
-        flag = True
-    return flag
-
-
-def Pvs(request, pk):
+def save_post(request, pk):
     userId = request.user.id
     flag = True
     for p in SavePost.objects.filter(post_id=pk):
@@ -58,6 +111,28 @@ def un_save_post(request, pk):
     saved_post = SavePost.objects.filter(post_id=pk).filter(user_id=userId).first()
     saved_post.delete()
     return redirect(reverse('post-detail', kwargs={'pk': pk}))
+
+
+def post_is_saved(pk, user):
+    queryset = SavePost \
+        .objects \
+        .filter(user=user) \
+        .filter(post_id=pk)
+    flag = False
+    if queryset:
+        flag = True
+    return flag
+
+
+def do_like_comment(userId, comments):
+    return_value = [False] * len(comments)
+    i = 0
+    for c in comments:
+        if LikeComment.objects.filter(comment_id=c.id).filter(user_id=userId).first():
+            return_value[i] = True
+        i += 1
+    print(return_value[::-1])
+    return return_value[::-1]
 
 
 class PostListView(ListView):
@@ -104,16 +179,14 @@ class PostDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         is_saved = False
+        do_like_comments = []
         if self.request.user.is_authenticated:
             post = self.get_object()
             is_saved = post_is_saved(post.pk, self.request.user)
-        category_count = get_category_count()
-        most_recent = Post.objects.order_by('-date_posted')[:3]
+            do_like_comments = do_like_comment(self.request.user.id, post.get_comments)
         context = super().get_context_data(**kwargs)
         context['is_saved'] = is_saved
-        context['most_recent'] = most_recent
-        context['page_request_var'] = "page"
-        context['category_count'] = category_count
+        context['do_like_comments'] = do_like_comments
         context['form'] = self.form
         return context
 
@@ -227,7 +300,7 @@ def search(request):
             results = User.objects.filter(lookups).distinct()
 
             context = {'results': results,
-                     'submitbutton': submitbutton}
+                       'submitbutton': submitbutton}
             return render(request, 'blog/search.html', context)
 
         else:
