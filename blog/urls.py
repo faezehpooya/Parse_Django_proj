@@ -19,6 +19,8 @@ urlpatterns = [
     path('about/', views.about, name='blog-about'),
     path('search/', views.search, name='search'),
     path('blog/search/', views.blog_search, name='blog_search'),
-    path('post/<int:pk>/save_post/', views.Pvs, name='save_post'),
+    path('post/<int:pk>/save_post/', views.save_post, name='save_post'),
     path('post/<int:pk>/un_save_post/', views.un_save_post, name='un_save_post'),
+    path('post/<int:pk>/like_comment/', views.like_comment, name='like_comment'),
+
 ]
