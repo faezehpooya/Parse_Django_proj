@@ -9,12 +9,32 @@ from django.views.generic import (
     UpdateView,
     DeleteView
 )
-from .models import Post, PostView, SavePost, Comment, LikeComment
+from .models import Post, PostView, SavePost, Comment, LikeComment, DislikeComment
 from .forms import CommentForm, PostForm
 
 
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+
+
+@api_view(['GET', 'POST', ])
+def liked_or_disliked_comment(request, pk):
+    comment_pk = request.GET.get('comment_pk', -1)
+    userId = request.user.id
+
+    liked = False
+    if LikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first():
+        liked = True
+    disliked = False
+    if DislikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first():
+        disliked = True
+
+    data = {
+        "id": comment_pk,
+        "liked": liked,
+        "disliked": disliked
+    }
+    return Response(data)
 
 
 @api_view(['GET', 'POST', ])
@@ -25,6 +45,13 @@ def like_comment(request, pk):
     if LikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first():
         flag = False
     if flag:
+        flag2 = False
+        if DislikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first():
+            flag2 = True
+        if flag2:
+            disliked_comment = DislikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first()
+            disliked_comment.delete()
+
         ap = LikeComment(comment=Comment.objects.get(id=comment_pk), user=User.objects.get(id=userId))
         ap.save()
     else:
@@ -36,42 +63,55 @@ def like_comment(request, pk):
         .filter(comment_id=comment_pk) \
         .count()
 
+    dislikes_count = DislikeComment \
+        .objects \
+        .filter(comment_id=comment_pk) \
+        .count()
+
     data = {
         "id": comment_pk,
-        "like_Dislike": flag,
-        "likes_count": likes_count
+        "like": flag,
+        "likes_count": likes_count,
+        "dislikes_count": dislikes_count
     }
     return Response(data)
 
 
 @api_view(['GET', 'POST', ])
 def dislike_comment(request, pk):
-    comment_pk = username = request.GET.get('comment_pk', -1)
-    print("hellooo", comment_pk)
+    comment_pk = request.GET.get('comment_pk', -1)
     userId = request.user.id
     flag = True
-    if LikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first():
+    if DislikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first():
         flag = False
     if flag:
-        ap = LikeComment(comment=Comment.objects.get(id=comment_pk), user=User.objects.get(id=userId))
+        flag2 = False
+        if LikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first():
+            flag2 = True
+        if flag2:
+            liked_comment = LikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first()
+            liked_comment.delete()
+
+        ap = DislikeComment(comment=Comment.objects.get(id=comment_pk), user=User.objects.get(id=userId))
         ap.save()
     else:
-        liked_comment = LikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first()
-        liked_comment.delete()
+        disliked_comment = DislikeComment.objects.filter(comment_id=comment_pk).filter(user_id=userId).first()
+        disliked_comment.delete()
+
+    dislikes_count = DislikeComment \
+        .objects \
+        .filter(comment_id=comment_pk) \
+        .count()
 
     likes_count = LikeComment \
         .objects \
-        .values('comment_id') \
-        .annotate(Count('comment_id')) \
         .filter(comment_id=comment_pk) \
-        .first()
-    if likes_count:
-        likes_count = likes_count.get('comment_id__count')
-    else:
-        likes_count = 0
+        .count()
 
     data = {
-        "like_Dislike": flag,
+        "id": comment_pk,
+        "dislike": flag,
+        "dislikes_count": dislikes_count,
         "likes_count": likes_count
     }
     return Response(data)
@@ -92,6 +132,12 @@ def get_category_count():
         .order_by('categories__title__count') \
         .reverse()
     return queryset
+
+
+def delete_comment(request, pk, comment_pk):
+    to_delete_comment = Comment.objects.filter(pk=comment_pk).first()
+    to_delete_comment.delete()
+    return redirect(request.META.get('HTTP_REFERER'))
 
 
 def save_post(request, pk):
@@ -131,7 +177,18 @@ def do_like_comment(userId, comments):
         if LikeComment.objects.filter(comment_id=c.id).filter(user_id=userId).first():
             return_value[i] = True
         i += 1
-    print(return_value[::-1])
+    print('likes', return_value[::-1])
+    return return_value[::-1]
+
+
+def do_dislike_comment(userId, comments):
+    return_value = [False] * len(comments)
+    i = 0
+    for c in comments:
+        if DislikeComment.objects.filter(comment_id=c.id).filter(user_id=userId).first():
+            return_value[i] = True
+        i += 1
+    print('dislikes', return_value[::-1])
     return return_value[::-1]
 
 
@@ -180,13 +237,19 @@ class PostDetailView(DetailView):
     def get_context_data(self, **kwargs):
         is_saved = False
         do_like_comments = []
+        do_like_comments2 = []
+        do_dislike_comments = []
         if self.request.user.is_authenticated:
             post = self.get_object()
             is_saved = post_is_saved(post.pk, self.request.user)
             do_like_comments = do_like_comment(self.request.user.id, post.get_comments)
+            do_like_comments2 = do_like_comment(self.request.user.id, post.get_comments)
+            do_dislike_comments = do_dislike_comment(self.request.user.id, post.get_comments)
         context = super().get_context_data(**kwargs)
         context['is_saved'] = is_saved
         context['do_like_comments'] = do_like_comments
+        context['do_dislike_comments'] = do_dislike_comments
+        context['do_like_comments2'] = do_like_comments2
         context['form'] = self.form
         return context
 
